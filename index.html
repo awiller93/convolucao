@@ -1,12 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Convolução</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0066cc">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--accent:#0066cc;--muted:#667}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:var(--bg);color:#111}
+.app{max-width:1100px;margin:18px auto;padding:14px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+.layout{display:flex;gap:12px;flex-wrap:wrap}
+.sidebar{width:300px;background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
+.main{flex:1;min-width:300px}
+.small{font-size:12px;color:var(--muted)}
+label{display:block;font-weight:600;font-size:13px;margin-top:8px}
+input[type=text], input[type=date], input[type=number], select, textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;margin-top:6px}
+button{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+.ghost{background:transparent;border:1px solid #ddd;color:#222}
+.subject-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;margin-top:8px;border:1px solid #f0f0f0}
+.color-pill{width:18px;height:18px;border-radius:4px}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.kanban{display:flex;gap:12px}
+.col{background:var(--card);padding:10px;border-radius:10px;flex:1;min-height:160px;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
+.col h3{margin:0 0 8px 0;font-size:14px}
+.card{background:#fff;padding:10px;border-radius:8px;margin-bottom:8px;border-left:6px solid #0066cc}
+.card .title{font-weight:700}
+.card .meta{font-size:12px;color:#444;margin-top:6px}
+.card .actions{display:flex;gap:6px;margin-top:8px}
+.muted{color:#666;font-size:12px}
+@media (max-width:860px){.layout{flex-direction:column}.sidebar{width:100%}.kanban{flex-direction:column}.col{min-height:120px}}
+.badge{display:inline-block;padding:3px 6px;border-radius:6px;font-size:12px}
+.badge.prova{background:#ffebee;color:#a00}
+.badge.trab{background:#e8f5e9;color:#14673a}
+</style>
 </head>
 <body>
-<h1>CONVOLUÇÃO</h1>
-<p>App base pronto para testar no GitHub Pages. Personalize à vontade!</p>
+  <div class="app">
+    <header>
+      <img src="icons/icon-192.png" alt="CONVOLUÇÃO" style="width:56px;height:56px;border-radius:8px;object-fit:cover;margin-right:8px"/>
+      <div>
+        <h1>CONVOLUÇÃO</h1>
+        <div class="small">Organizador — salva localmente · PWA</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Matérias</strong><span class="small">Peso/falta (%)</span>
+        </div>
+        <div id="subjectsList"></div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid #eee" />
+        <label>Adicionar Matéria</label>
+        <input id="subName" type="text" placeholder="Nome (ex: Física)" />
+        <label>Cor</label>
+        <input id="subColor" type="color" value="#0066cc" />
+        <label>Peso por falta (%) — ex: 1.25</label>
+        <input id="subWeight" type="number" step="0.01" placeholder="1.25" />
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="addSubject">Adicionar</button>
+          <button id="exportData" class="ghost">Exportar</button>
+        </div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid #eee" />
+        <label>Novo Trabalho / Prova</label>
+        <input id="taskTitle" type="text" placeholder="Título" />
+        <label>Matéria</label>
+        <select id="taskSubject"></select>
+        <label>Tipo</label>
+        <select id="taskType"><option>Trabalho</option><option>Prova</option><option>Projeto</option></select>
+        <label>Link (Docs)</label>
+        <input id="taskLink" type="text" placeholder="https://..." />
+        <label>Data de início</label>
+        <input id="taskStart" type="date" />
+        <label>Data de entrega</label>
+        <input id="taskDue" type="date" />
+        <label>Prazo alternativo (opcional)</label>
+        <input id="taskAltDue" type="date" />
+        <label>Observações</label>
+        <textarea id="taskNotes" rows="2"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="addTask">Adicionar Item</button>
+          <button id="clearForm" class="ghost">Limpar</button>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="controls">
+          <div class="small">Filtro</div>
+          <select id="filterSub"><option value="all">Todas</option></select>
+          <select id="filterType"><option value="all">Todos</option><option>Prova</option><option>Trabalho</option><option>Projeto</option></select>
+          <button id="backupBtn" class="ghost">Backup</button>
+        </div>
+        <div class="kanban">
+          <div class="col" id="colPending"><h3>Pendentes</h3></div>
+          <div class="col" id="colDone"><h3>Concluídos</h3></div>
+          <div class="col" id="colLate"><h3>Entregue Atrasado</h3></div>
+          <div class="col" id="colMissed"><h3>Não entregue</h3></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+const LS_KEY = 'convolucao_v2';
+let state = {subjects:[], tasks:[]};
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function load(){ const raw = localStorage.getItem(LS_KEY); if(raw) try{ state = JSON.parse(raw) }catch(e){console.error(e)} }
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)) }
+function formatDate(d){ if(!d) return ''; return new Date(d).toLocaleDateString('pt-BR') }
+
+function renderSubjects(){
+  const list = document.getElementById('subjectsList'); list.innerHTML='';
+  const sel = document.getElementById('taskSubject'); sel.innerHTML='';
+  const filter = document.getElementById('filterSub'); filter.innerHTML='<option value="all">Todas</option>';
+  state.subjects.forEach(s=>{
+    const div=document.createElement('div'); div.className='subject-item';
+    div.innerHTML=`<div class="color-pill" style="background:${s.color}"></div><div style="flex:1"><div style="font-weight:700">${s.name}</div><div class="small">Peso: ${s.weight}%</div></div><div><button class="ghost" data-id="${s.id}" data-action="edit">Editar</button><button class="ghost" data-id="${s.id}" data-action="del">Apagar</button></div>`;
+    list.appendChild(div);
+    const opt=document.createElement('option'); opt.value=s.id; opt.textContent=s.name; sel.appendChild(opt);
+    const opt2 = opt.cloneNode(true); filter.appendChild(opt2);
+  });
+}
+
+function renderTasks(){
+  ['colPending','colDone','colLate','colMissed'].forEach(id=>document.getElementById(id).querySelectorAll('.card').forEach(n=>n.remove()));
+  const fSub=document.getElementById('filterSub').value; const fType=document.getElementById('filterType').value;
+  state.tasks.sort((a,b)=> new Date(a.due) - new Date(b.due));
+  state.tasks.forEach(t=>{
+    if(fSub!=='all' && t.subject!==fSub) return;
+    if(fType!=='all' && t.type!==fType) return;
+    const subj = state.subjects.find(s=>s.id===t.subject) || {color:'#ccc',name:'-'};
+    const card=document.createElement('div'); card.className='card'; card.style.borderLeftColor=subj.color;
+    const due = t.altDue || t.due;
+    // determine color class by days left
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = Math.round((new Date(due) - today)/(1000*60*60*24));
+    if(diff<=0) card.style.background='#ffcccc'; // last day or past
+    else if(diff<=2) card.style.background='#e6ccff';
+    else if(diff<=5) card.style.background='#ffe5cc';
+    else card.style.background='#cce0ff';
+    card.innerHTML=`<div class="title">${t.title}</div><div class="meta">${subj.name} · ${t.type} · <span class="muted">${formatDate(due)}</span></div><div class="meta small">${t.link?'<a href="'+t.link+'" target="_blank">documento</a>':''}</div>`;
+    const actions = document.createElement('div'); actions.className='actions';
+    const btnEdit=document.createElement('button'); btnEdit.textContent='Editar'; btnEdit.className='ghost'; btnEdit.onclick=()=>editTask(t.id);
+    const btnDeliver=document.createElement('button'); btnDeliver.textContent='Entregar'; btnDeliver.onclick=()=>deliverTask(t.id);
+    const btnLate=document.createElement('button'); btnLate.textContent='Entregue atrasado'; btnLate.className='ghost'; btnLate.onclick=()=>deliverTask(t.id,true);
+    const btnMiss=document.createElement('button'); btnMiss.textContent='Não entregue'; btnMiss.className='ghost'; btnMiss.onclick=()=>markMissed(t.id);
+    const btnUpdate=document.createElement('button'); btnUpdate.textContent='Atualizar prazo'; btnUpdate.className='ghost'; btnUpdate.onclick=()=>updateDue(t.id);
+    actions.appendChild(btnEdit); actions.appendChild(btnDeliver); actions.appendChild(btnLate); actions.appendChild(btnUpdate); actions.appendChild(btnMiss);
+    card.appendChild(actions);
+    if(t.state==='done') document.getElementById('colDone').appendChild(card);
+    else if(t.state==='late') document.getElementById('colLate').appendChild(card);
+    else if(t.state==='missed') document.getElementById('colMissed').appendChild(card);
+    else document.getElementById('colPending').appendChild(card);
+  });
+}
+
+// subjects CRUD
+function addSubject(){ const name=document.getElementById('subName').value.trim(); const color=document.getElementById('subColor').value; const weight=parseFloat(document.getElementById('subWeight').value)||0; if(!name) return alert('Digite nome'); state.subjects.push({id:uid(),name,color,weight}); save(); renderSubjects(); document.getElementById('subName').value=''; }
+function delSubject(id){ if(!confirm('Remover matéria?')) return; state.subjects=state.subjects.filter(s=>s.id!==id); save(); renderSubjects(); renderTasks(); }
+function editSubject(id){ const s=state.subjects.find(x=>x.id===id); if(!s) return; const name=prompt('Nome',s.name); if(name!==null) s.name=name; const weight=prompt('Peso por falta (%)',s.weight); if(weight!==null) s.weight=parseFloat(weight)||s.weight; save(); renderSubjects(); }
+
+// tasks CRUD
+function addTask(){ const title=document.getElementById('taskTitle').value.trim(); const subject=document.getElementById('taskSubject').value; const type=document.getElementById('taskType').value; const link=document.getElementById('taskLink').value.trim(); const start=document.getElementById('taskStart').value; const due=document.getElementById('taskDue').value; const altDue=document.getElementById('taskAltDue').value||''; const notes=document.getElementById('taskNotes').value; if(!title||!subject||!due) return alert('Preencha título, matéria e entrega'); state.tasks.push({id:uid(),title,subject,type,link,start,due,altDue,notes,state:'pending',history:[]}); save(); renderTasks(); clearForm(); }
+function clearForm(){ ['taskTitle','taskLink','taskStart','taskDue','taskAltDue','taskNotes'].forEach(id=>document.getElementById(id).value=''); }
+function editTask(id){ const t=state.tasks.find(x=>x.id===id); if(!t) return; const title=prompt('Título',t.title); if(title!==null) t.title=title; const link=prompt('Link (vazio para remover)',t.link||''); if(link!==null) t.link=link; save(); renderTasks(); }
+function deliverTask(id,forceLate){ const t=state.tasks.find(x=>x.id===id); if(!t) return; const d=prompt('Data de entrega (AAAA-MM-DD) — vazio = hoje',''); const dDate=d?new Date(d):new Date(); dDate.setHours(0,0,0,0); t.deliveredAt=dDate.toISOString().slice(0,10); const effDue=t.altDue||t.due; if(forceLate) t.state='late'; else if(new Date(t.deliveredAt) <= new Date(effDue)) t.state='done'; else t.state='late'; t.history=t.history||[]; t.history.push({action:'delivered',at:new Date().toISOString(),deliveredAt:t.deliveredAt}); save(); renderTasks(); }
+function markMissed(id){ const t=state.tasks.find(x=>x.id===id); if(!t) return; if(!confirm('Marcar como NÃO ENTREGUE?')) return; t.state='missed'; t.history=t.history||[]; t.history.push({action:'missed',at:new Date().toISOString()}); save(); renderTasks(); }
+function updateDue(id){ const t=state.tasks.find(x=>x.id===id); if(!t) return; const newDue=prompt('Nova data (AAAA-MM-DD)',t.due); if(!newDue) return; t.prevDue=t.prevDue||t.due; t.due=newDue; t.history=t.history||[]; t.history.push({action:'due_updated',at:new Date().toISOString(),newDue}); save(); renderTasks(); }
+
+function exportData(){ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='convolucao_backup.json'; a.click(); }
+document.getElementById('exportData')?.addEventListener('click',exportData);
+document.getElementById('backupBtn')?.addEventListener('click',exportData);
+
+function bind(){ document.getElementById('addSubject').addEventListener('click',addSubject); document.getElementById('subjectsList').addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; const id=btn.dataset.id; const act=btn.dataset.action; if(act==='del') delSubject(id); else if(act==='edit') editSubject(id); }); document.getElementById('addTask').addEventListener('click',addTask); document.getElementById('clearForm').addEventListener('click',clearForm); document.getElementById('filterSub').addEventListener('change',renderTasks); document.getElementById('filterType').addEventListener('change',renderTasks); }
+
+function seed(){ if(state.subjects.length===0){ state.subjects.push({id:uid(),name:'Física',color:'#0066cc',weight:1.25}); state.subjects.push({id:uid(),name:'Eletrônica',color:'#b266ff',weight:1.00}); save(); } }
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('./service-worker.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW failed',e)); }); }
+load(); seed(); bind(); renderSubjects(); renderTasks();
+</script>
 </body>
 </html>
