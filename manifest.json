@@ -1,20 +1,13 @@
 {
-  "name": "CONVOLU\u00c7\u00c3O",
-  "short_name": "Convolu\u00e7\u00e3o",
+  "name": "CONVOLUÇÃO",
+  "short_name": "Convolução",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a73e8",
+  "background_color": "#f4f6fb",
+  "theme_color": "#0066cc",
+  "orientation": "any",
   "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
